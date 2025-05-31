@@ -698,13 +698,12 @@ class RealtimeSession(llm.RealtimeSession):
                     frame_data = part.inline_data.data
 
                     try:
-                        logger.info("KYLE TESTING")
                         actual_audio_bytes = base64.b64decode(frame_data)
                         # DEBUG: Let's try just using 24kHz directly to see if the static goes away
                         # This will sound slow but should eliminate static if that's the core issue
                         frame = rtc.AudioFrame(
                             data=actual_audio_bytes,
-                            sample_rate=24000,  # Use Gemini's native rate to test
+                            sample_rate=OUTPUT_AUDIO_SAMPLE_RATE,  # Use Gemini's native rate to test
                             num_channels=OUTPUT_AUDIO_CHANNELS,
                             samples_per_channel=len(actual_audio_bytes) // (2 * OUTPUT_AUDIO_CHANNELS),
                         )
