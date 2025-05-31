@@ -293,6 +293,7 @@ class RealtimeSession(llm.RealtimeSession):
             vertexai=self._opts.vertexai,
             project=self._opts.project,
             location=self._opts.location,
+            http_options={"api_version": "v1alpha"}
         )
 
         self._main_atask = asyncio.create_task(self._main_task(), name="gemini-realtime-session")
@@ -637,7 +638,7 @@ class RealtimeSession(llm.RealtimeSession):
         )
 
         if is_given(self._opts.proactivity):
-            conf.proactivity = ProactivityConfig(proactive_audio=self._opts.proactivity)
+            conf.proactivity = {"proactive_audio": self._opts.proactivity}
         if is_given(self._opts.enable_affective_dialog):
             conf.enable_affective_dialog = self._opts.enable_affective_dialog
         if is_given(self._opts.realtime_input_config):
