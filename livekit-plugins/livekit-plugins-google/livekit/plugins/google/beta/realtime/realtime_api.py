@@ -696,8 +696,9 @@ class RealtimeSession(llm.RealtimeSession):
                     if not current_gen._first_token_timestamp:
                         current_gen._first_token_timestamp = time.time()
                     frame_data = part.inline_data.data
-                    actual_audio_bytes = base64.b64decode(frame_data)
+
                     try:
+                        actual_audio_bytes = base64.b64decode(frame_data)
                         # DEBUG: Let's try just using 24kHz directly to see if the static goes away
                         # This will sound slow but should eliminate static if that's the core issue
                         frame = rtc.AudioFrame(
