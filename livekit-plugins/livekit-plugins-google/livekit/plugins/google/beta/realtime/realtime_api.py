@@ -698,27 +698,40 @@ class RealtimeSession(llm.RealtimeSession):
                     frame_data = part.inline_data.data
 
                     try:
+                        # Fix base64 padding if necessary
+                        missing_padding = len(frame_data) % 4
+                        if missing_padding:
+                            frame_data += '=' * (4 - missing_padding)
+                        
                         actual_audio_bytes = base64.b64decode(frame_data)
-                        # DEBUG: Let's try just using 24kHz directly to see if the static goes away
-                        # This will sound slow but should eliminate static if that's the core issue
-                        frame = rtc.AudioFrame(
-                            data=actual_audio_bytes,
-                            sample_rate=OUTPUT_AUDIO_SAMPLE_RATE,  # Use Gemini's native rate to test
-                            num_channels=OUTPUT_AUDIO_CHANNELS,
-                            samples_per_channel=len(actual_audio_bytes) // (2 * OUTPUT_AUDIO_CHANNELS),
-                        )
-                        current_gen.audio_ch.send_nowait(frame)
+                        
+                        # Ensure the audio data length is valid for 16-bit audio (multiple of 2 bytes)
+                        audio_length = len(actual_audio_bytes)
+                        if audio_length % 2 != 0:
+                            # Pad with a zero byte if odd length
+                            actual_audio_bytes += b'\x00'
+                            audio_length += 1
+                        
+                        # Calculate samples per channel for 16-bit audio
+                        samples_per_channel = audio_length // (2 * OUTPUT_AUDIO_CHANNELS)
+                        
+                        # Only create frame if we have valid samples
+                        if samples_per_channel > 0:
+                            # Use Gemini's native 24kHz rate to avoid resampling artifacts
+                            frame = rtc.AudioFrame(
+                                data=actual_audio_bytes,
+                                sample_rate=24000,  # Use Gemini's native rate 
+                                num_channels=OUTPUT_AUDIO_CHANNELS,
+                                samples_per_channel=samples_per_channel,
+                            )
+                            current_gen.audio_ch.send_nowait(frame)
+                        else:
+                            logger.debug("Skipping empty audio frame")
                         
                     except Exception as e:
                         logger.error(f"Error processing Gemini audio: {e}")
-                        # Fallback: create frame as-is
-                        frame = rtc.AudioFrame(
-                            data=frame_data,
-                            sample_rate=OUTPUT_AUDIO_SAMPLE_RATE,
-                            num_channels=OUTPUT_AUDIO_CHANNELS,
-                            samples_per_channel=len(frame_data) // (2 * OUTPUT_AUDIO_CHANNELS),
-                        )
-                        current_gen.audio_ch.send_nowait(frame)
+                        # Skip malformed frames rather than crashing
+                        continue
 
         if input_transcription := server_content.input_transcription:
             text = input_transcription.text
