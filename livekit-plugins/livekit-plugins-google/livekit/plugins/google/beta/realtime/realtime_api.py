@@ -697,28 +697,28 @@ class RealtimeSession(llm.RealtimeSession):
                         current_gen._first_token_timestamp = time.time()
                     frame_data = part.inline_data.data
 
-                    # try:
-                    #     actual_audio_bytes = base64.b64decode(frame_data)
-                    #     # DEBUG: Let's try just using 24kHz directly to see if the static goes away
-                    #     # This will sound slow but should eliminate static if that's the core issue
-                    #     frame = rtc.AudioFrame(
-                    #         data=actual_audio_bytes,
-                    #         sample_rate=OUTPUT_AUDIO_SAMPLE_RATE,  # Use Gemini's native rate to test
-                    #         num_channels=OUTPUT_AUDIO_CHANNELS,
-                    #         samples_per_channel=len(actual_audio_bytes) // (2 * OUTPUT_AUDIO_CHANNELS),
-                    #     )
-                    #     current_gen.audio_ch.send_nowait(frame)
+                    try:
+                        actual_audio_bytes = base64.b64decode(frame_data)
+                        # DEBUG: Let's try just using 24kHz directly to see if the static goes away
+                        # This will sound slow but should eliminate static if that's the core issue
+                        frame = rtc.AudioFrame(
+                            data=actual_audio_bytes,
+                            sample_rate=OUTPUT_AUDIO_SAMPLE_RATE,  # Use Gemini's native rate to test
+                            num_channels=OUTPUT_AUDIO_CHANNELS,
+                            samples_per_channel=len(actual_audio_bytes) // (2 * OUTPUT_AUDIO_CHANNELS),
+                        )
+                        current_gen.audio_ch.send_nowait(frame)
                         
-                    # except Exception as e:
-                    #     logger.error(f"Error processing Gemini audio: {e}")
+                    except Exception as e:
+                        logger.error(f"Error processing Gemini audio: {e}")
                         # Fallback: create frame as-is
-                    frame = rtc.AudioFrame(
-                        data=frame_data,
-                        sample_rate=OUTPUT_AUDIO_SAMPLE_RATE,
-                        num_channels=OUTPUT_AUDIO_CHANNELS,
-                        samples_per_channel=len(frame_data) // (2 * OUTPUT_AUDIO_CHANNELS),
-                    )
-                    current_gen.audio_ch.send_nowait(frame)
+                        frame = rtc.AudioFrame(
+                            data=frame_data,
+                            sample_rate=OUTPUT_AUDIO_SAMPLE_RATE,
+                            num_channels=OUTPUT_AUDIO_CHANNELS,
+                            samples_per_channel=len(frame_data) // (2 * OUTPUT_AUDIO_CHANNELS),
+                        )
+                        current_gen.audio_ch.send_nowait(frame)
 
         if input_transcription := server_content.input_transcription:
             text = input_transcription.text
