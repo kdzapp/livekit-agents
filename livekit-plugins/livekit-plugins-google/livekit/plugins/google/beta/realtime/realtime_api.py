@@ -394,7 +394,7 @@ class RealtimeSession(llm.RealtimeSession):
         for f in self._resample_audio(frame):
             for nf in self._bstream.write(f.data.tobytes()):
                 realtime_input = LiveClientRealtimeInput(
-                    media_chunks=[Blob(data=nf.data.tobytes(), mime_type="audio/pcm")]
+                    media_chunks=[Blob(data=nf.data.tobytes(), mime_type="’audio/pcm;rate=16000")]
                 )
                 self._send_client_event(realtime_input)
 
